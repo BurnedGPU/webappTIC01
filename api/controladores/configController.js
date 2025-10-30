@@ -1,4 +1,4 @@
-import DispenserConfig from './models/DispenserConfig.js';
+import DispenserConfig from '../models/DispenserConfig.js';
 
 // Controlador para GET /api/config
 export const getConfig = async (req, res) => {
