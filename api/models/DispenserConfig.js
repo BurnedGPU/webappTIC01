@@ -1,7 +1,5 @@
 import mongoose from 'mongoose';
-import '../lib/db.js'; // <-- ¡IMPORTANTE! Importa el archivo de conexión
 
-// Schema (sin cambios)
 const dispenserConfigSchema = new mongoose.Schema({
     dispenserId: {
         type: Number,
@@ -20,7 +18,4 @@ const dispenserConfigSchema = new mongoose.Schema({
     timestamps: true
 });
 
-// --- PATRÓN SEGURO PARA SERVERLESS ---
-// Revisa si el modelo ya fue compilado antes de intentar compilarlo de nuevo
-// Esto evita errores durante el "hot-reloading" en Vercel
 export default mongoose.models.DispenserConfig || mongoose.model('DispenserConfig', dispenserConfigSchema);
