@@ -1,6 +1,6 @@
 import express from 'express';
 // Importamos las funciones del controlador
-import { getConfig, updateConfig } from './controladores/configController.js';
+import { getConfig, updateConfig } from '../controladores/configController.js';
 
 const router = express.Router();
 
