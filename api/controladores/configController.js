@@ -1,21 +1,15 @@
 import DispenserConfig from '../models/DispenserConfig.js';
 
-// Controlador para GET /api/config
+// --- GET /api/config ---
+// Obtiene todos los depósitos. Si no hay, crea el primero.
 export const getConfig = async (req, res) => {
     try {
         const configs = await DispenserConfig.find().sort({ dispenserId: 1 });
         if (configs.length === 0) {
-            console.log("No se encontraron configuraciones, creando iniciales...");
-            // --- CAMBIADO (solo intervalSeconds) ---
-            const initialConfigs = [
-                { dispenserId: 1, intervalSeconds: 3600 },
-                { dispenserId: 2, intervalSeconds: 3600 },
-                { dispenserId: 3, intervalSeconds: 3600 },
-                { dispenserId: 4, intervalSeconds: 3600 },
-            ];
-            // ------------------------------------
-            await DispenserConfig.insertMany(initialConfigs);
-            return res.json(initialConfigs);
+            console.log("No se encontraron configuraciones, creando la inicial...");
+            const initialConfig = { dispenserId: 1, intervalSeconds: 3600 };
+            const newConfig = await DispenserConfig.create(initialConfig);
+            return res.json([newConfig]); // Devuelve un array con el nuevo
         }
         res.json(configs);
     } catch (error) {
@@ -24,34 +18,71 @@ export const getConfig = async (req, res) => {
     }
 };
 
-// Controlador para POST /api/config
-export const updateConfig = async (req, res) => {
-    const newConfigs = req.body;
-    if (!Array.isArray(newConfigs) || newConfigs.length !== 4) {
-        return res.status(400).json({ error: 'Se esperaba un array con 4 configuraciones.' });
-    }
+// --- POST /api/config ---
+// AÑADE un nuevo depósito.
+export const addDispenser = async (req, res) => {
     try {
-        const updatePromises = newConfigs.map(config => {
-            const idToUpdate = config.dispenserId || config.id;
-            if (!idToUpdate || typeof idToUpdate !== 'number' || idToUpdate < 1 || idToUpdate > 4) {
-                throw new Error(`Configuración inválida recibida para el ID: ${idToUpdate}`);
-            }
-            // --- CAMBIADO (solo actualiza intervalSeconds) ---
-            return DispenserConfig.findOneAndUpdate(
-                { dispenserId: idToUpdate },
-                { intervalSeconds: config.intervalSeconds }, // Solo actualizamos este campo
-                { new: true, upsert: true, runValidators: true }
-            );
-            // ---------------------------------------------
+        // 1. Encontrar el dispenserId más alto actual
+        const lastDispenser = await DispenserConfig.findOne().sort({ dispenserId: -1 });
+        const newId = lastDispenser ? lastDispenser.dispenserId + 1 : 1;
+
+        // 2. Crear el nuevo depósito
+        const newDispenser = new DispenserConfig({
+            dispenserId: newId,
+            intervalSeconds: 3600 // Valor por defecto
         });
-        const updatedDocs = await Promise.all(updatePromises);
-        console.log("Configuración actualizada en BD:", updatedDocs);
-        res.status(200).json({ message: 'Configuración guardada exitosamente.' });
+        await newDispenser.save();
+
+        // 3. Devolver el nuevo depósito al frontend
+        res.status(201).json(newDispenser); // 201 = Creado
     } catch (error) {
-        console.error("Error al guardar configuración:", error);
-        if (error.name === 'ValidationError' || error.message.startsWith('Configuración inválida')) {
-            return res.status(400).json({ error: `Datos inválidos: ${error.message}` });
+        console.error("Error al añadir depósito:", error);
+        res.status(500).json({ error: 'Error interno del servidor.' });
+    }
+};
+
+// --- PUT /api/config/:id ---
+// ACTUALIZA un depósito existente por su _id
+export const updateDispenser = async (req, res) => {
+    try {
+        const { id } = req.params; // Este es el _id de MongoDB
+        const { intervalSeconds } = req.body; // Solo actualizamos el intervalo
+
+        if (intervalSeconds === undefined) {
+            return res.status(400).json({ error: 'Falta intervalSeconds.' });
         }
+
+        const updatedDispenser = await DispenserConfig.findByIdAndUpdate(
+            id,
+            { intervalSeconds },
+            { new: true, runValidators: true } // Devuelve el doc actualizado y corre validadores
+        );
+
+        if (!updatedDispenser) {
+            return res.status(404).json({ error: 'Depósito no encontrado.' });
+        }
+        res.json(updatedDispenser);
+    } catch (error) {
+        console.error("Error al actualizar depósito:", error);
+        res.status(500).json({ error: 'Error interno del servidor.' });
+    }
+};
+
+
+// --- DELETE /api/config/:id ---
+// ELIMINA un depósito por su _id
+export const deleteDispenser = async (req, res) => {
+    try {
+        const { id } = req.params; // Este es el _id de MongoDB
+
+        const deletedDispenser = await DispenserConfig.findByIdAndDelete(id);
+
+        if (!deletedDispenser) {
+            return res.status(404).json({ error: 'Depósito no encontrado.' });
+        }
+        res.json({ message: 'Depósito eliminado exitosamente.' });
+    } catch (error) {
+        console.error("Error al eliminar depósito:", error);
         res.status(500).json({ error: 'Error interno del servidor.' });
     }
 };

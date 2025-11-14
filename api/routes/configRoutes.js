@@ -1,17 +1,24 @@
 import express from 'express';
-// Importamos las funciones del controlador
-import { getConfig, updateConfig } from '../controladores/configController.js';
+// Importamos las nuevas funciones
+import {
+    getConfig,
+    addDispenser,
+    updateDispenser,
+    deleteDispenser
+} from '../controladores/configController.js';
 
 const router = express.Router();
 
-// --- Ruta GET: /api/config ---
-// Llama a la función getConfig del controlador
+// GET /api/config -> Obtiene todos
 router.get('/', getConfig);
 
-// --- Ruta POST: /api/config ---
-// Llama a la función updateConfig del controlador
-router.post('/', updateConfig);
+// POST /api/config -> Añade uno nuevo
+router.post('/', addDispenser);
 
-// (Quitamos la lógica y la definición del modelo de aquí)
+// PUT /api/config/:id -> Actualiza uno existente (por _id)
+router.put('/:id', updateDispenser);
+
+// DELETE /api/config/:id -> Elimina uno existente (por _id)
+router.delete('/:id', deleteDispenser);
 
 export default router;

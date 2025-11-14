@@ -1,42 +1,67 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 
-// --- CAMBIADO (props) ---
-// Quitamos startTime, cambiamos 'interval' por 'intervalSeconds' para claridad
-function DispenserConfig({ title, intervalSeconds, onConfigChange }) {
+// Recibimos los datos (data) y las funciones del padre (onSave, onDelete)
+function DispenserConfig({ data, onSave, onDelete }) {
+
+    // El componente ahora maneja su propio estado basado en las props
+    const [interval, setInterval] = useState(data.intervalSeconds);
+    const [isSaving, setIsSaving] = useState(false);
+    const [hasChanged, setHasChanged] = useState(false);
+
+    // Sincroniza el estado si la prop (data) cambia
+    useEffect(() => {
+        setInterval(data.intervalSeconds);
+    }, [data.intervalSeconds]);
 
     const handleChange = (e) => {
-        // Obtenemos el valor numérico
-        const numericValue = parseInt(e.target.value, 10) || 0;
+        setInterval(parseInt(e.target.value, 10) || 0);
+        setHasChanged(true); // Marca que hay cambios sin guardar
+    };
 
-        // Llamamos a la función del padre con la nueva estructura
-        onConfigChange({
-            intervalSeconds: numericValue
+    const handleSaveClick = () => {
+        setIsSaving(true);
+        // Llama a la función 'onSave' del padre
+        onSave(data._id, interval, () => {
+            setIsSaving(false); // Callback para cuando termine
+            setHasChanged(false);
         });
+    };
+
+    const handleDeleteClick = () => {
+        if (window.confirm(`¿Seguro que quieres eliminar el Depósito ${data.dispenserId}?`)) {
+            onDelete(data._id); // Llama a la función 'onDelete' del padre
+        }
     };
 
     return (
         <div style={styles.card}>
-            <h3 style={styles.subtitle}>{title}</h3>
+            {/* Botón de Eliminar (X) */}
+            <button onClick={handleDeleteClick} style={styles.deleteButton}>×</button>
 
-            {/* --- CAMBIADO (Label e Input) --- */}
+            <h3 style={styles.subtitle}>Depósito {data.dispenserId}</h3>
+
             <label style={styles.label}>
                 Intervalo (segundos):
             </label>
             <input
                 type="number"
-                min="1" // Mínimo 1 segundo
-                value={intervalSeconds} // Usamos el nuevo prop
-                onChange={handleChange} // Usamos el manejador simple
+                min="1"
+                value={interval}
+                onChange={handleChange}
                 style={styles.input}
             />
-            {/* ------------------------------- */}
 
-            {/* El input de startTime se ha eliminado */}
+            {/* Botón de Guardar (solo si hay cambios) */}
+            {hasChanged && (
+                <button onClick={handleSaveClick} style={styles.saveButton} disabled={isSaving}>
+                    {isSaving ? 'Guardando...' : 'Guardar'}
+                </button>
+            )}
         </div>
     );
 }
 
-// Estilos (se mantienen los de la paleta Vite/React)
+// Estilos actualizados
 const styles = {
     card: {
         textAlign: "left",
@@ -50,6 +75,7 @@ const styles = {
         maxWidth: "400px",
         color: "#e0e0e0",
         boxSizing: 'border-box',
+        position: 'relative', // Para posicionar el botón de eliminar
     },
     subtitle: {
         marginTop: 0,
@@ -77,6 +103,29 @@ const styles = {
         backgroundColor: '#3b3b3b',
         color: '#ffffff',
     },
+    saveButton: {
+        width: '100%',
+        padding: '10px',
+        backgroundColor: '#61dafb',
+        color: '#242424',
+        border: 'none',
+        borderRadius: '8px',
+        cursor: 'pointer',
+        fontSize: '16px',
+        fontWeight: 'bold',
+        marginTop: '10px',
+    },
+    deleteButton: {
+        position: 'absolute',
+        top: '5px',
+        right: '10px',
+        background: 'transparent',
+        border: 'none',
+        color: '#999',
+        fontSize: '24px',
+        fontWeight: 'bold',
+        cursor: 'pointer',
+    }
 };
 
 export default DispenserConfig;

@@ -1,12 +1,10 @@
 import mongoose from 'mongoose';
 
 const dispenserConfigSchema = new mongoose.Schema({
+    // El dispenserId es ahora solo para mostrar "Depósito 1", "Depósito 2", etc.
     dispenserId: {
         type: Number,
         required: true,
-        unique: true,
-        min: 1,
-        max: 4
     },
     intervalSeconds: {
         type: Number,
@@ -18,4 +16,5 @@ const dispenserConfigSchema = new mongoose.Schema({
     timestamps: true
 });
 
+// Usamos el patrón seguro para serverless
 export default mongoose.models.DispenserConfig || mongoose.model('DispenserConfig', dispenserConfigSchema);
