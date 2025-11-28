@@ -1,88 +1,91 @@
 import DispenserConfig from '../models/DispenserConfig.js';
 
-// --- GET /api/config ---
-// Obtiene todos los depósitos. Si no hay, crea el primero.
+// GET: Obtener configuración
 export const getConfig = async (req, res) => {
     try {
-        const configs = await DispenserConfig.find().sort({ dispenserId: 1 });
-        if (configs.length === 0) {
-            console.log("No se encontraron configuraciones, creando la inicial...");
-            const initialConfig = { dispenserId: 1, intervalSeconds: 3600 };
-            const newConfig = await DispenserConfig.create(initialConfig);
-            return res.json([newConfig]); // Devuelve un array con el nuevo
-        }
-        res.json(configs);
+        // Obtenemos todos los documentos de la colección 'modulo 1'
+        const configs = await DispenserConfig.find().sort({ modulo: 1 });
+
+        // Mapeamos los datos para que el frontend los entienda
+        // (convertimos 'modulo' a 'dispenserId' para no romper tu UI actual)
+        const frontendData = configs.map(doc => ({
+            _id: doc._id,
+            dispenserId: doc.modulo, // Adaptamos el nombre para el frontend
+            intervalSeconds: doc.intervalSeconds,
+            nombre: doc.nombre
+        }));
+
+        res.json(frontendData);
     } catch (error) {
         console.error("Error al obtener configuración:", error);
         res.status(500).json({ error: 'Error interno del servidor.' });
     }
 };
 
-// --- POST /api/config ---
-// AÑADE un nuevo depósito.
+// POST: Añadir nuevo depósito (Módulo)
 export const addDispenser = async (req, res) => {
     try {
-        // 1. Encontrar el dispenserId más alto actual
-        const lastDispenser = await DispenserConfig.findOne().sort({ dispenserId: -1 });
-        const newId = lastDispenser ? lastDispenser.dispenserId + 1 : 1;
+        // Buscamos el último módulo para asignar el siguiente ID
+        const lastDispenser = await DispenserConfig.findOne().sort({ modulo: -1 });
+        const newId = lastDispenser ? lastDispenser.modulo + 1 : 1;
 
-        // 2. Crear el nuevo depósito
         const newDispenser = new DispenserConfig({
-            dispenserId: newId,
-            intervalSeconds: 3600 // Valor por defecto
+            modulo: newId,
+            intervalSeconds: 3600, // Default 1 hora
+            nombre: `Módulo ${newId}`
         });
         await newDispenser.save();
 
-        // 3. Devolver el nuevo depósito al frontend
-        res.status(201).json(newDispenser); // 201 = Creado
+        // Devolvemos formato compatible con frontend
+        res.status(201).json({
+            _id: newDispenser._id,
+            dispenserId: newDispenser.modulo,
+            intervalSeconds: newDispenser.intervalSeconds
+        });
     } catch (error) {
         console.error("Error al añadir depósito:", error);
         res.status(500).json({ error: 'Error interno del servidor.' });
     }
 };
 
-// --- PUT /api/config/:id ---
-// ACTUALIZA un depósito existente por su _id
+// PUT: Actualizar configuración
 export const updateDispenser = async (req, res) => {
     try {
-        const { id } = req.params; // Este es el _id de MongoDB
-        const { intervalSeconds } = req.body; // Solo actualizamos el intervalo
+        const { id } = req.params; // _id de MongoDB
+        const { intervalSeconds } = req.body;
 
-        if (intervalSeconds === undefined) {
-            return res.status(400).json({ error: 'Falta intervalSeconds.' });
-        }
-
+        // Actualizamos usando el modelo que apunta a 'modulo 1'
         const updatedDispenser = await DispenserConfig.findByIdAndUpdate(
             id,
-            { intervalSeconds },
-            { new: true, runValidators: true } // Devuelve el doc actualizado y corre validadores
+            {
+                intervalSeconds: intervalSeconds,
+                timestamp: new Date() // Actualizamos la fecha de modificación
+            },
+            { new: true }
         );
 
         if (!updatedDispenser) {
             return res.status(404).json({ error: 'Depósito no encontrado.' });
         }
-        res.json(updatedDispenser);
+
+        res.json({
+            _id: updatedDispenser._id,
+            dispenserId: updatedDispenser.modulo,
+            intervalSeconds: updatedDispenser.intervalSeconds
+        });
     } catch (error) {
         console.error("Error al actualizar depósito:", error);
         res.status(500).json({ error: 'Error interno del servidor.' });
     }
 };
 
-
-// --- DELETE /api/config/:id ---
-// ELIMINA un depósito por su _id
+// DELETE: Eliminar depósito
 export const deleteDispenser = async (req, res) => {
     try {
-        const { id } = req.params; // Este es el _id de MongoDB
-
-        const deletedDispenser = await DispenserConfig.findByIdAndDelete(id);
-
-        if (!deletedDispenser) {
-            return res.status(404).json({ error: 'Depósito no encontrado.' });
-        }
+        const { id } = req.params;
+        await DispenserConfig.findByIdAndDelete(id);
         res.json({ message: 'Depósito eliminado exitosamente.' });
     } catch (error) {
-        console.error("Error al eliminar depósito:", error);
         res.status(500).json({ error: 'Error interno del servidor.' });
     }
 };

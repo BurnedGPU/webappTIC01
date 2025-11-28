@@ -1,20 +1,28 @@
 import mongoose from 'mongoose';
 
+// Definimos el esquema EXACTO que usa el ESP32 (basado en data_0.txt)
 const dispenserConfigSchema = new mongoose.Schema({
-    // El dispenserId es ahora solo para mostrar "Depósito 1", "Depósito 2", etc.
-    dispenserId: {
-        type: Number,
-        required: true,
+    nombre: {
+        type: String,
+        default: 'Medicamento' // Valor por defecto si no se especifica
     },
     intervalSeconds: {
         type: Number,
-        required: true,
-        min: 1,
-        default: 3600
+        required: true
+    },
+    modulo: { // Antes 'dispenserId'
+        type: Number,
+        required: true
+    },
+    timestamp: {
+        type: Date,
+        default: Date.now
     }
 }, {
-    timestamps: true
+    // Forzamos el nombre de la colección para que coincida con la del ESP32
+    collection: 'modulo 1'
 });
 
-// Usamos el patrón seguro para serverless
+// Nota: Mongoose intentará pluralizar si no se fuerza la colección,
+// pero con 'collection: ...' escribiremos donde el ESP32 lee.
 export default mongoose.models.DispenserConfig || mongoose.model('DispenserConfig', dispenserConfigSchema);
