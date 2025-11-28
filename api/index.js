@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
 import configRoutes from './routes/configRoutes.js';
+import statsRoutes from './routes/statsRoutes.js';
 
 const app = express();
 app.use(cors());
@@ -48,6 +49,7 @@ app.get('/', (req, res) => {
 // ¡Usamos el middleware!
 // Todas las peticiones a /api/config primero deben pasar por connectDB
 app.use('/api/config', connectDB, configRoutes);
+app.use('/api/stats', connectDB, statsRoutes);
 
 // Exportar la App para Vercel
 export default app;
