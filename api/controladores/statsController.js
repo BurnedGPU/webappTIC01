@@ -1,29 +1,46 @@
-import DispenserConfig from '../models/DispenserConfig.js';
+import Estadistica from '../models/Estadistica.js';
 
 export const getStats = async (req, res) => {
     try {
-        // 1. Contar total de documentos
-        const totalDocs = await DispenserConfig.countDocuments();
+        // 1. Obtener todos los registros de historial
+        const logs = await Estadistica.find().sort({ timestamp: -1 });
 
-        // 2. Obtener el último registro (para ver cuándo fue la última actividad)
-        const lastEntry = await DispenserConfig.findOne().sort({ timestamp: -1 });
+        // 2. Calcular Tiempo Promedio de Reacción (en minutos)
+        let totalReactionTime = 0;
+        let reactionCount = 0;
 
-        // 3. Agregación para contar cuántos registros hay por cada módulo
-        const countByModule = await DispenserConfig.aggregate([
-            {
-                $group: {
-                    _id: "$modulo", // Agrupar por el campo 'modulo'
-                    count: { $sum: 1 }, // Contar
-                    avgInterval: { $avg: "$intervalSeconds" } // Promedio de intervalos
+        // 3. Contar dosis por módulo
+        const dosesByModule = { 1: 0, 2: 0, 3: 0, 4: 0 };
+
+        logs.forEach(log => {
+            // Conteo por módulo
+            if (dosesByModule[log.modulo] !== undefined) {
+                dosesByModule[log.modulo]++;
+            }
+
+            // Cálculo de tiempo de reacción
+            if (log.dispersionPastilla && log.recogidaPastilla) {
+                const dispensada = new Date(log.dispersionPastilla);
+                const recogida = new Date(log.recogidaPastilla);
+                const diffMinutes = (recogida - dispensada) / 1000 / 60; // Diferencia en minutos
+
+                // Filtramos valores absurdos (ej: negativos o > 24 horas)
+                if (diffMinutes >= 0 && diffMinutes < 1440) {
+                    totalReactionTime += diffMinutes;
+                    reactionCount++;
                 }
-            },
-            { $sort: { _id: 1 } } // Ordenar por número de módulo (1, 2, 3...)
-        ]);
+            }
+        });
+
+        const avgReactionTime = reactionCount > 0
+            ? Math.round(totalReactionTime / reactionCount)
+            : 0;
 
         res.json({
-            total: totalDocs,
-            lastActivity: lastEntry ? lastEntry.timestamp : null,
-            byModule: countByModule
+            totalDoses: logs.length,
+            avgReactionTimeMinutes: avgReactionTime,
+            dosesByModule,
+            lastEvents: logs.slice(0, 5) // Devolvemos los últimos 5 eventos para una lista
         });
 
     } catch (error) {

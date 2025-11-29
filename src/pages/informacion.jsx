@@ -27,62 +27,44 @@ function Informacion() {
 
     return (
         <div style={styles.container}>
-            <h1 style={styles.title}>📊 Estadísticas de Medicación</h1>
+            <h1 style={styles.title}>📊 Rendimiento del Paciente</h1>
 
             <div style={styles.grid}>
-                {/* Widget 1: Resumen General */}
+                {/* Widget 1: Tiempo de Reacción */}
                 <div style={styles.widget}>
-                    <h3 style={styles.widgetTitle}>Resumen Total</h3>
-                    <p style={styles.dataLarge}>{stats?.total || 0}</p>
-                    <p style={styles.dataSmall}>Registros totales en BD</p>
+                    <h3 style={styles.widgetTitle}>Tiempo de Reacción</h3>
+                    <p style={styles.dataLarge}>{stats?.avgReactionTimeMinutes || 0} min</p>
+                    <p style={styles.dataSmall}>Promedio para tomar la dosis</p>
                 </div>
 
-                {/* Widget 2: Distribución por Módulo (Dinámico) */}
+                {/* Widget 2: Dosis Totales Dispendas */}
                 <div style={styles.widget}>
-                    <h3 style={styles.widgetTitle}>Registros por Depósito</h3>
-                    {stats?.byModule?.length > 0 ? (
-                        <div style={{width: '100%'}}>
-                            {stats.byModule.map((mod) => (
-                                <div key={mod._id} style={styles.row}>
-                                    <span>Depósito {mod._id}:</span>
-                                    <span style={{color: '#61dafb', fontWeight: 'bold'}}>{mod.count} regs.</span>
+                    <h3 style={styles.widgetTitle}>Dosis Totales</h3>
+                    <p style={styles.dataLarge}>{stats?.totalDoses || 0}</p>
+                    <p style={styles.dataSmall}>Registros históricos</p>
+                </div>
+
+                {/* Widget 3: Últimos Eventos (Lista real) */}
+                <div style={styles.widget}>
+                    <h3 style={styles.widgetTitle}>Última Actividad</h3>
+                    {stats?.lastEvents?.length > 0 ? (
+                        <div style={{width: '100%', fontSize: '0.9em'}}>
+                            {stats.lastEvents.map((ev, i) => (
+                                <div key={i} style={styles.row}>
+                                    <span style={{color: '#61dafb'}}>Mód {ev.modulo}</span>
+                                    <span>
+                                        {new Date(ev.dispersionPastilla).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                    </span>
                                 </div>
                             ))}
                         </div>
                     ) : (
-                        <p style={styles.placeholder}>No hay datos por módulo</p>
-                    )}
-                </div>
-
-                {/* Widget 3: Última Actividad */}
-                <div style={styles.widget}>
-                    <h3 style={styles.widgetTitle}>Última Actividad</h3>
-                    <p style={styles.dataLarge} style={{...styles.dataLarge, fontSize: '1.5em'}}>
-                        {lastDate.split(',')[0]}
-                    </p>
-                    <p style={styles.dataSmall}>
-                        {lastDate.split(',')[1] || ''}
-                    </p>
-                </div>
-
-                {/* Widget 4: Promedio de Tiempos */}
-                <div style={styles.widget}>
-                    <h3 style={styles.widgetTitle}>Promedio de Intervalos</h3>
-                    {stats?.byModule?.length > 0 ? (
-                        stats.byModule.map((mod) => (
-                            <p key={mod._id} style={styles.dataSmall}>
-                                Dep {mod._id}: {Math.round(mod.avgInterval)} seg
-                            </p>
-                        ))
-                    ) : (
-                        <p style={styles.placeholder}>Sin datos</p>
+                        <p style={styles.placeholder}>Sin registros recientes</p>
                     )}
                 </div>
             </div>
 
-            <Link to="/" style={styles.backButton}>
-                Volver al inicio
-            </Link>
+            {/* ... botón de volver ... */}
         </div>
     );
 }
