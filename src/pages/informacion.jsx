@@ -22,40 +22,61 @@ function Informacion() {
         return <div style={styles.container}><h2 style={{textAlign:'center'}}>Cargando datos...</h2></div>;
     }
 
-    // Formatear fecha
-    const lastDate = stats?.lastActivity ? new Date(stats.lastActivity).toLocaleString() : 'Sin actividad';
-
     return (
         <div style={styles.container}>
             <h1 style={styles.title}>📊 Rendimiento del Paciente</h1>
 
             <div style={styles.grid}>
-                {/* Widget 1: Tiempo de Reacción */}
+                {/* Widget 1: Tiempo Promedio (Sin cambios) */}
                 <div style={styles.widget}>
-                    <h3 style={styles.widgetTitle}>Tiempo de Reacción</h3>
+                    <h3 style={styles.widgetTitle}>Tiempo Promedio</h3>
                     <p style={styles.dataLarge}>{stats?.avgReactionTimeMinutes || 0} min</p>
-                    <p style={styles.dataSmall}>Promedio para tomar la dosis</p>
+                    <p style={styles.dataSmall}>General de reacción</p>
                 </div>
 
-                {/* Widget 2: Dosis Totales Dispendas */}
+                {/* Widget 2: Rango de Reacción (NUEVO WIDGET) */}
+                <div style={styles.widget}>
+                    <h3 style={styles.widgetTitle}>Rango de Reacción</h3>
+                    <div style={{display: 'flex', justifyContent: 'space-around', width: '100%', marginTop: '10px'}}>
+                        <div style={{textAlign: 'center'}}>
+                            <p style={{...styles.dataSmall, color: '#4F8A10', fontWeight: 'bold', margin:0}}>Mejor</p>
+                            <p style={{...styles.dataLarge, fontSize: '1.8em', margin: '5px 0'}}>{stats?.minReactionTimeMinutes || 0}m</p>
+                        </div>
+                        <div style={{width: '1px', background: '#444'}}></div> {/* Divisor */}
+                        <div style={{textAlign: 'center'}}>
+                            <p style={{...styles.dataSmall, color: '#d8000c', fontWeight: 'bold', margin:0}}>Peor</p>
+                            <p style={{...styles.dataLarge, fontSize: '1.8em', margin: '5px 0'}}>{stats?.maxReactionTimeMinutes || 0}m</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Widget 3: Dosis Totales */}
                 <div style={styles.widget}>
                     <h3 style={styles.widgetTitle}>Dosis Totales</h3>
                     <p style={styles.dataLarge}>{stats?.totalDoses || 0}</p>
                     <p style={styles.dataSmall}>Registros históricos</p>
                 </div>
 
-                {/* Widget 3: Últimos Eventos (Lista real) */}
+                {/* Widget 4: Última Actividad (MODIFICADO) */}
                 <div style={styles.widget}>
                     <h3 style={styles.widgetTitle}>Última Actividad</h3>
                     {stats?.lastEvents?.length > 0 ? (
-                        <div style={{width: '100%', fontSize: '0.9em'}}>
+                        <div style={{width: '100%', fontSize: '0.85em'}}>
                             {stats.lastEvents.map((ev, i) => (
                                 <div key={i} style={styles.row}>
-                                    <span style={{color: '#61dafb'}}>Mód {ev.modulo}</span>
-                                    <span>
-                    {/* Usamos siempre timestamp porque es el único seguro */}
-                                        {new Date(ev.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                </span>
+                                    <span style={{color: '#61dafb', fontWeight:'bold'}}>M{ev.modulo}</span>
+
+                                    <div style={{textAlign: 'right'}}>
+                                        {/* Mostramos el tiempo de reacción específico si existe */}
+                                        {ev.tiempoReaccionMs > 0 && (
+                                            <span style={{color: '#aaa', marginRight: '8px', fontSize: '0.9em'}}>
+                                                ⏱ {(ev.tiempoReaccionMs / 60000).toFixed(1)}m
+                                            </span>
+                                        )}
+                                        <span>
+                                            {new Date(ev.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                        </span>
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -65,12 +86,14 @@ function Informacion() {
                 </div>
             </div>
 
-            {/* ... botón de volver ... */}
+            <Link to="/" style={styles.backButton}>
+                Volver al inicio
+            </Link>
         </div>
     );
 }
 
-// Estilos (Reutilizamos los tuyos, agregando 'row' para la lista)
+// Estilos (Mantenemos los mismos, solo ajustamos un poco el grid si es necesario)
 const styles = {
     container: {
         width: '100%', minHeight: '100vh', padding: '20px',
@@ -104,15 +127,18 @@ const styles = {
         fontSize: '1em', color: '#a0a0a0', textAlign: 'center', margin: '5px 0',
     },
     row: {
-        display: 'flex', justifyContent: 'space-between', width: '80%',
+        display: 'flex', justifyContent: 'space-between', width: '90%', // Un poco más ancho para que quepa la info
         margin: '5px auto', borderBottom: '1px solid #444', paddingBottom: '5px'
     },
     backButton: {
         display: 'block', width: 'fit-content', margin: '20px auto',
         padding: '10px 20px', backgroundColor: '#646cff', color: '#ffffff',
         textDecoration: 'none', borderRadius: '8px', fontWeight: 'bold',
+        transition: 'background-color 0.2s',
     },
     placeholder: { fontStyle: 'italic', color: '#666' }
 };
+
+styles.backButton[':hover'] = { backgroundColor: '#7a82ff' };
 
 export default Informacion;

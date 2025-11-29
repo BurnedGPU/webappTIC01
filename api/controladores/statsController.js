@@ -6,7 +6,12 @@ export const getStats = async (req, res) => {
 
         let totalReactionTimeMs = 0;
         let reactionCount = 0;
-        const dosesByModule = {}; // Objeto dinámico para contar cualquier módulo
+        const dosesByModule = {};
+
+        // Variables para rastrear Mínimo y Máximo
+        // Iniciamos min en infinito para que el primer valor sea menor
+        let minReactionMs = Infinity;
+        let maxReactionMs = 0;
 
         logs.forEach(log => {
             // 1. Conteo por módulo
@@ -15,22 +20,36 @@ export const getStats = async (req, res) => {
             }
             dosesByModule[log.modulo]++;
 
-            // 2. Cálculo de tiempo de reacción (usando el campo directo)
-            // Solo sumamos si el tiempo es válido (mayor a 0)
+            // 2. Cálculos de tiempo
             if (log.tiempoReaccionMs && log.tiempoReaccionMs > 0) {
                 totalReactionTimeMs += log.tiempoReaccionMs;
                 reactionCount++;
+
+                // Actualizar Mínimo y Máximo
+                if (log.tiempoReaccionMs < minReactionMs) minReactionMs = log.tiempoReaccionMs;
+                if (log.tiempoReaccionMs > maxReactionMs) maxReactionMs = log.tiempoReaccionMs;
             }
         });
 
-        // Convertimos ms a minutos para el promedio
+        // Cálculos finales (convertir a minutos con 1 decimal)
         const avgReactionTimeMinutes = reactionCount > 0
-            ? Math.round((totalReactionTimeMs / reactionCount) / 60000) // ms -> min
+            ? Number(((totalReactionTimeMs / reactionCount) / 60000).toFixed(1))
+            : 0;
+
+        // Si no hubo reacciones, el mínimo debe ser 0 (no Infinity)
+        const minReactionTimeMinutes = reactionCount > 0
+            ? Number((minReactionMs / 60000).toFixed(1))
+            : 0;
+
+        const maxReactionTimeMinutes = reactionCount > 0
+            ? Number((maxReactionMs / 60000).toFixed(1))
             : 0;
 
         res.json({
             totalDoses: logs.length,
-            avgReactionTimeMinutes, // Ahora enviamos el cálculo correcto
+            avgReactionTimeMinutes,
+            minReactionTimeMinutes, // <--- Nuevo dato
+            maxReactionTimeMinutes, // <--- Nuevo dato
             dosesByModule,
             lastEvents: logs.slice(0, 5)
         });
@@ -39,4 +58,9 @@ export const getStats = async (req, res) => {
         console.error("Error obteniendo estadísticas:", error);
         res.status(500).json({ error: 'Error calculando estadísticas' });
     }
+};
+
+// ... (la función seedStats se mantiene igual)
+export const seedStats = async (req, res) => {
+    // ...
 };
