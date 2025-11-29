@@ -46,24 +46,20 @@ function Informacion() {
 
                 {/* Widget 3: Últimos Eventos (Lista real) */}
                 <div style={styles.widget}>
-                    <h3 style={styles.widgetTitle}>Última Actividad</h3>{stats?.lastEvents?.length > 0 ? (
-                    <div style={{width: '100%', fontSize: '0.9em'}}>
-                        {stats.lastEvents.map((ev, i) => {
-                            // --- CORRECCIÓN AQUÍ ---
-                            // Usamos dispersionPastilla, si no existe, usamos timestamp, si no, fecha actual
-                            const fechaEvento = ev.dispersionPastilla || ev.timestamp || new Date();
-
-                            return (
+                    <h3 style={styles.widgetTitle}>Última Actividad</h3>
+                    {stats?.lastEvents?.length > 0 ? (
+                        <div style={{width: '100%', fontSize: '0.9em'}}>
+                            {stats.lastEvents.map((ev, i) => (
                                 <div key={i} style={styles.row}>
                                     <span style={{color: '#61dafb'}}>Mód {ev.modulo}</span>
                                     <span>
-                        {new Date(fechaEvento).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                    </span>
+                    {/* Usamos siempre timestamp porque es el único seguro */}
+                                        {new Date(ev.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                </span>
                                 </div>
-                            );
-                        })}
-                    </div>
-                ) : (
+                            ))}
+                        </div>
+                    ) : (
                         <p style={styles.placeholder}>Sin registros recientes</p>
                     )}
                 </div>

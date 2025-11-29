@@ -2,13 +2,9 @@ import mongoose from 'mongoose';
 
 const estadisticaSchema = new mongoose.Schema({
     modulo: Number,
-    dispersionPastilla: Date,
-    recogidaPastilla: Date,
+    tiempoReaccionMs: Number, // <-- CAMBIO CLAVE: El campo real de la BD
     timestamp: { type: Date, default: Date.now }
 }, {
-    // Aseguramos que lea de la colección correcta
-    // Nota: Mongoose suele buscar el plural minúscula ('estadisticas') por defecto,
-    // pero para asegurar compatibilidad con tu sistema existente:
     collection: 'estadisticas'
 });
 

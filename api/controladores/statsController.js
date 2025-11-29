@@ -2,45 +2,37 @@ import Estadistica from '../models/Estadistica.js';
 
 export const getStats = async (req, res) => {
     try {
-        // 1. Obtener todos los registros de historial
         const logs = await Estadistica.find().sort({ timestamp: -1 });
 
-        // 2. Calcular Tiempo Promedio de Reacción (en minutos)
-        let totalReactionTime = 0;
+        let totalReactionTimeMs = 0;
         let reactionCount = 0;
-
-        // 3. Contar dosis por módulo
-        const dosesByModule = { 1: 0, 2: 0, 3: 0, 4: 0 };
+        const dosesByModule = {}; // Objeto dinámico para contar cualquier módulo
 
         logs.forEach(log => {
-            // Conteo por módulo
-            if (dosesByModule[log.modulo] !== undefined) {
-                dosesByModule[log.modulo]++;
+            // 1. Conteo por módulo
+            if (!dosesByModule[log.modulo]) {
+                dosesByModule[log.modulo] = 0;
             }
+            dosesByModule[log.modulo]++;
 
-            // Cálculo de tiempo de reacción
-            if (log.dispersionPastilla && log.recogidaPastilla) {
-                const dispensada = new Date(log.dispersionPastilla);
-                const recogida = new Date(log.recogidaPastilla);
-                const diffMinutes = (recogida - dispensada) / 1000 / 60; // Diferencia en minutos
-
-                // Filtramos valores absurdos (ej: negativos o > 24 horas)
-                if (diffMinutes >= 0 && diffMinutes < 1440) {
-                    totalReactionTime += diffMinutes;
-                    reactionCount++;
-                }
+            // 2. Cálculo de tiempo de reacción (usando el campo directo)
+            // Solo sumamos si el tiempo es válido (mayor a 0)
+            if (log.tiempoReaccionMs && log.tiempoReaccionMs > 0) {
+                totalReactionTimeMs += log.tiempoReaccionMs;
+                reactionCount++;
             }
         });
 
-        const avgReactionTime = reactionCount > 0
-            ? Math.round(totalReactionTime / reactionCount)
+        // Convertimos ms a minutos para el promedio
+        const avgReactionTimeMinutes = reactionCount > 0
+            ? Math.round((totalReactionTimeMs / reactionCount) / 60000) // ms -> min
             : 0;
 
         res.json({
             totalDoses: logs.length,
-            avgReactionTimeMinutes: avgReactionTime,
+            avgReactionTimeMinutes, // Ahora enviamos el cálculo correcto
             dosesByModule,
-            lastEvents: logs.slice(0, 5) // Devolvemos los últimos 5 eventos para una lista
+            lastEvents: logs.slice(0, 5)
         });
 
     } catch (error) {
